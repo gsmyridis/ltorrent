@@ -63,6 +63,63 @@ impl BitField {
     }
 }
 
+impl<'a> IntoIterator for &'a BitField {
+    type Item = usize;
+    type IntoIter = BitFieldIter<'a>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        BitFieldIter {
+            bitfield: self,
+            byte_i: 0,
+            bit_i: 0,
+        }
+    }
+}
+
+/// Represents an iterator over the pieces in a `BitField`.
+///
+/// This struct is used to iterate over each piece in the `BitField`, providing the index
+/// of each piece that is present. It iterates over the bytes of the `BitField`'s payload,
+/// and for each byte, it checks each bit to determine if a piece is present.
+///
+/// # Examples
+///
+/// ```
+/// use ltorrent::peers::bitfield::BitField;
+///
+/// let bitfield = BitField::from_payload(vec![0b10101010, 0b01010101]);
+/// let mut iterator = bitfield.into_iter();
+/// assert_eq!(iterator.next(), Some(0)); // The first piece is present.
+/// assert_eq!(iterator.next(), Some(2)); // The third piece is present.
+/// assert_eq!(iterator.next(), Some(4)); // The fifth piece is present.
+/// ```
+pub struct BitFieldIter<'a> {
+    bitfield: &'a BitField,
+    byte_i: usize,
+    bit_i: usize,
+}
+
+impl<'a> Iterator for BitFieldIter<'a> {
+    type Item = usize;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        while self.byte_i < self.bitfield.payload.len() {
+            let byte = self.bitfield.payload[self.byte_i];
+            while self.bit_i < u8::BITS as usize {
+                let piece_i = self.byte_i * (u8::BITS as usize) + self.bit_i;
+                let mask = 1_u8.rotate_right((self.bit_i + 1) as u32) as usize;
+                self.bit_i += 1;
+                if (byte as usize) & mask != 0 {
+                    return Some(piece_i);
+                }
+            }
+            self.byte_i += 1;
+            self.bit_i = 0;
+        }
+        None
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -75,5 +132,20 @@ mod tests {
         assert!(!bitfield.contains_piece(7));
         assert!(!bitfield.contains_piece(8));
         assert!(bitfield.contains_piece(15));
+    }
+
+    #[test]
+    fn test_bitfield_iterator() {
+        let bitfield = BitField::from_payload(vec![0b10101010, 0b01010101]);
+        let mut iter = bitfield.into_iter();
+        assert_eq!(iter.next(), Some(0));
+        assert_eq!(iter.next(), Some(2));
+        assert_eq!(iter.next(), Some(4));
+        assert_eq!(iter.next(), Some(6));
+        assert_eq!(iter.next(), Some(9));
+        assert_eq!(iter.next(), Some(11));
+        assert_eq!(iter.next(), Some(13));
+        assert_eq!(iter.next(), Some(15));
+        assert_eq!(iter.next(), None);
     }
 }
