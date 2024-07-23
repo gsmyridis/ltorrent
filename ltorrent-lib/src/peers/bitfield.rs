@@ -5,6 +5,8 @@
 /// # Examples
 ///
 /// ```
+/// use ltorrent::peers::bitfield::BitField;
+///
 /// let bitfield = BitField::from_payload(vec![0b10101010, 0b01010101]);
 /// assert!(bitfield.contains_piece(0)); // The peer has the first piece.
 /// assert!(!bitfield.contains_piece(7)); // The peer does not have the eighth piece.
@@ -24,6 +26,8 @@ impl BitField {
     /// # Examples
     ///
     /// ```
+    /// use ltorrent::peers::bitfield::BitField;
+    ///
     /// let payload = vec![0b10101010, 0b01010101];
     /// let bitfield = BitField::from_payload(payload);
     /// assert!(bitfield.contains_piece(0)); // The peer has the first piece.
@@ -43,6 +47,8 @@ impl BitField {
     /// # Examples
     ///
     /// ```
+    /// use ltorrent::peers::bitfield::BitField;
+    ///
     /// let bitfield = BitField::from_payload(vec![0b10101010, 0b01010101]);
     /// assert!(bitfield.contains_piece(0)); // The peer has the first piece.
     /// assert!(!bitfield.contains_piece(7)); // The peer does not have the eighth piece.

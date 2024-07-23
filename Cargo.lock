@@ -7,5 +7,5 @@ name = "ltorrent"
 version = "0.1.0"
 
 [[package]]
-name = "ltorrent-lib"
+name = "ltorrent-client"
 version = "0.1.0"
