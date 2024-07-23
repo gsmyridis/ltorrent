@@ -1,3 +1,5 @@
+/// Represents the bitfield of a peer in a torrent swarm.
+///
 /// The `BitField` struct is used to track which pieces of the torrent a peer has.
 /// It stores this information as a vector of bytes (`Vec<u8>`), where each bit
 /// represents the presence (1) or absence (0) of a corresponding piece.
@@ -89,6 +91,7 @@ impl<'a> IntoIterator for &'a BitField {
 ///
 /// let bitfield = BitField::from_payload(vec![0b10101010, 0b01010101]);
 /// let mut iterator = bitfield.into_iter();
+///
 /// assert_eq!(iterator.next(), Some(0)); // The first piece is present.
 /// assert_eq!(iterator.next(), Some(2)); // The third piece is present.
 /// assert_eq!(iterator.next(), Some(4)); // The fifth piece is present.
