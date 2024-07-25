@@ -7,7 +7,7 @@
 /// # Examples
 ///
 /// ```
-/// use ltorrent::peers::bitfield::BitField;
+/// use ltorrent::net::bitfield::BitField;
 ///
 /// let bitfield = BitField::from_payload(vec![0b10101010, 0b01010101]);
 /// assert!(bitfield.contains_piece(0)); // The peer has the first piece.
@@ -28,7 +28,7 @@ impl BitField {
     /// # Examples
     ///
     /// ```
-    /// use ltorrent::peers::bitfield::BitField;
+    /// use ltorrent::net::bitfield::BitField;
     ///
     /// let payload = vec![0b10101010, 0b01010101];
     /// let bitfield = BitField::from_payload(payload);
@@ -49,7 +49,7 @@ impl BitField {
     /// # Examples
     ///
     /// ```
-    /// use ltorrent::peers::bitfield::BitField;
+    /// use ltorrent::net::bitfield::BitField;
     ///
     /// let bitfield = BitField::from_payload(vec![0b10101010, 0b01010101]);
     /// assert!(bitfield.contains_piece(0)); // The peer has the first piece.
@@ -87,7 +87,7 @@ impl<'a> IntoIterator for &'a BitField {
 /// # Examples
 ///
 /// ```
-/// use ltorrent::peers::bitfield::BitField;
+/// use ltorrent::net::bitfield::BitField;
 ///
 /// let bitfield = BitField::from_payload(vec![0b10101010, 0b01010101]);
 /// let mut iterator = bitfield.into_iter();

@@ -1,2 +1,2 @@
-pub mod peers;
+pub mod net;
 pub mod torrent;
