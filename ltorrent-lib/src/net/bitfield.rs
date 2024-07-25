@@ -15,7 +15,7 @@
 /// assert!(bitfield.contains_piece(9)); // The peer has the ninth piece.
 /// ```
 pub struct BitField {
-    pub payload: Vec<u8>,
+    payload: Vec<u8>,
 }
 
 impl BitField {
