@@ -9,7 +9,8 @@
 /// ```
 /// use ltorrent::net::bitfield::BitField;
 ///
-/// let bitfield = BitField::from_payload(vec![0b10101010, 0b01010101]);
+/// let payload = vec![0b10101010, 0b01010101];
+/// let bitfield = BitField::from_payload(&payload);
 /// assert!(bitfield.contains_piece(0)); // The peer has the first piece.
 /// assert!(!bitfield.contains_piece(7)); // The peer does not have the eighth piece.
 /// assert!(bitfield.contains_piece(9)); // The peer has the ninth piece.
@@ -31,12 +32,12 @@ impl BitField {
     /// use ltorrent::net::bitfield::BitField;
     ///
     /// let payload = vec![0b10101010, 0b01010101];
-    /// let bitfield = BitField::from_payload(payload);
+    /// let bitfield = BitField::from_payload(&payload);
     /// assert!(bitfield.contains_piece(0)); // The peer has the first piece.
     /// assert!(!bitfield.contains_piece(1)); // The peer does not have the second piece.
     /// ```
-    pub fn from_payload(payload: Vec<u8>) -> Self {
-        Self { payload }
+    pub fn from_payload(payload: &[u8]) -> Self {
+        Self { payload: payload.to_vec() }
     }
 
     /// Checks if a specific piece is present in the bitfield.
@@ -51,7 +52,8 @@ impl BitField {
     /// ```
     /// use ltorrent::net::bitfield::BitField;
     ///
-    /// let bitfield = BitField::from_payload(vec![0b10101010, 0b01010101]);
+    /// let payload = vec![0b10101010, 0b01010101];
+    /// let bitfield = BitField::from_payload(&payload);
     /// assert!(bitfield.contains_piece(0)); // The peer has the first piece.
     /// assert!(!bitfield.contains_piece(7)); // The peer does not have the eighth piece.
     /// ```
@@ -89,7 +91,8 @@ impl<'a> IntoIterator for &'a BitField {
 /// ```
 /// use ltorrent::net::bitfield::BitField;
 ///
-/// let bitfield = BitField::from_payload(vec![0b10101010, 0b01010101]);
+/// let payload = vec![0b10101010, 0b01010101];
+/// let bitfield = BitField::from_payload(&payload);
 /// let mut iterator = bitfield.into_iter();
 ///
 /// assert_eq!(iterator.next(), Some(0)); // The first piece is present.
@@ -129,7 +132,8 @@ mod tests {
 
     #[test]
     fn test_contains_piece() {
-        let bitfield = BitField::from_payload(vec![0b10101010, 0b01010101]);
+        let payload = vec![0b10101010, 0b01010101];
+        let bitfield = BitField::from_payload(&payload);
         assert!(bitfield.contains_piece(0));
         assert!(!bitfield.contains_piece(1));
         assert!(!bitfield.contains_piece(7));
@@ -139,7 +143,8 @@ mod tests {
 
     #[test]
     fn test_bitfield_iterator() {
-        let bitfield = BitField::from_payload(vec![0b10101010, 0b01010101]);
+        let payload = vec![0b10101010, 0b01010101];
+        let bitfield = BitField::from_payload(&payload);
         let mut iter = bitfield.into_iter();
         assert_eq!(iter.next(), Some(0));
         assert_eq!(iter.next(), Some(2));
