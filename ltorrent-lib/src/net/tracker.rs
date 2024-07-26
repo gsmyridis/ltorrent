@@ -28,9 +28,9 @@ impl Tracker {
     ///
     /// Returns an error if the query fails.
     pub async fn query(&self, request: TrackerRequest) -> anyhow::Result<TrackerResponse> {
-        let query = Some(request.serialize().as_str());
+        let query = request.serialize();
         let mut url = Url::parse(&self.url).context("Failed to parse URL.")?;
-        url.set_query(query);
+        url.set_query(Some(query.as_str()));
 
         let response = reqwest::get(url).await.context("Failed to fetch tracker response.")?;
         let response = response.bytes().await.context("Failed to read tracker response.")?;
@@ -78,7 +78,7 @@ pub struct TrackerRequest {
 
 impl TrackerRequest {
     /// Creates a new TrackerRequest.
-    pub(crate) fn new(
+    pub fn new(
         info_hash: [u8; 20],
         peer_id: String,
         port: u16,
@@ -128,10 +128,10 @@ impl TrackerRequest {
 #[derive(Debug, Clone, Deserialize)]
 pub struct TrackerResponse {
     interval: usize,
-    peers: Peers,
+    peers: PeersAddresses,
 }
 
-impl Serialize for Peers {
+impl Serialize for PeersAddresses {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: serde::Serializer,
@@ -146,11 +146,11 @@ impl Serialize for Peers {
 }
 
 #[derive(Debug, Clone)]
-pub(crate) struct Peers(pub(crate) Vec<std::net::SocketAddrV4>);
+pub struct PeersAddresses(pub Vec<std::net::SocketAddrV4>);
 
 /// Implementation of Deserialization for Peers.
-impl<'de> Deserialize<'de> for Peers {
-    fn deserialize<D>(deserializer: D) -> Result<Peers, D::Error>
+impl<'de> Deserialize<'de> for PeersAddresses {
+    fn deserialize<D>(deserializer: D) -> Result<PeersAddresses, D::Error>
     where
         D: serde::de::Deserializer<'de>,
     {
@@ -161,7 +161,7 @@ impl<'de> Deserialize<'de> for Peers {
 struct PeersVisitor;
 
 impl<'de> serde::de::Visitor<'de> for PeersVisitor {
-    type Value = Peers;
+    type Value = PeersAddresses;
 
     fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
         write!(formatter, "6 bytes. The first 4 bytes are a peer's IP address, the last 2 bytes are the port number.")
@@ -174,7 +174,7 @@ impl<'de> serde::de::Visitor<'de> for PeersVisitor {
         if v.len() % 6 != 0 {
             return Err(E::invalid_length(v.len(), &self));
         }
-        Ok(Peers(
+        Ok(PeersAddresses(
             v.chunks_exact(6)
                 .map(|chunk| {
                     let ip = std::net::Ipv4Addr::new(chunk[0], chunk[1], chunk[2], chunk[3]);
