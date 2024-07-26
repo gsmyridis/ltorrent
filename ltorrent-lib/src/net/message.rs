@@ -32,11 +32,20 @@ impl Message {
     pub fn new(tag: MessageTag, payload: Vec<u8>) -> anyhow::Result<Self> {
         match tag {
             // If the message has a tag that does not require a payload, the payload must be empty.
-            MessageTag::Choke | MessageTag::UnChoke | MessageTag::Interested | MessageTag::NotInterested => {
+            MessageTag::Choke
+            | MessageTag::UnChoke
+            | MessageTag::Interested
+            | MessageTag::NotInterested => {
                 if !payload.is_empty() {
-                    return Err(anyhow::anyhow!("Message tag {:?} does not require a payload.", tag));
+                    return Err(anyhow::anyhow!(
+                        "Message tag {:?} does not require a payload.",
+                        tag
+                    ));
                 }
-                Ok(Self { tag, payload: Vec::new() })
+                Ok(Self {
+                    tag,
+                    payload: Vec::new(),
+                })
             }
             // TODO: Add more checks for other message tags.
             _ => Ok(Self { tag, payload }),
@@ -65,9 +74,10 @@ impl Message {
             MessageTag::Choke
             | MessageTag::UnChoke
             | MessageTag::Interested
-            | MessageTag::NotInterested => {
-                Ok(Self { tag, payload: Vec::new() })
-            }
+            | MessageTag::NotInterested => Ok(Self {
+                tag,
+                payload: Vec::new(),
+            }),
             _ => Err(anyhow::anyhow!("Message tag {:?} requires a payload.", tag)),
         }
     }
