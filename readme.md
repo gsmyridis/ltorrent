@@ -1,5 +1,21 @@
-# Peer
+# Todos
 
-## Bitfield
-
-A bitfield is a data structure used in programming to efficiently store and manipulate a set of binary flags or bit values. It is typically used to represent multiple boolean variables or small integer values compactly within a single integer or a sequence of bytes. Each bit in the bitfield represents a different flag or value, allowing for the efficient use of memory and enabling fast bitwise operations.
+- [ ] Torrent File
+    - [ ] From Magnet
+    - [ ] Builder
+    - [ ] Tests
+- [ ] Messages
+    - [ ] Checks when creating a message for each message type.
+    - [ ] Tests
+- [ ] Tracker
+    - [ ] DHT Tracker
+    - [ ] Tests
+- [ ] Peer
+    - [ ] PeerConnection async Trait
+    - [ ] Peer Builder
+    - [ ] Tests
+- [ ] Piece
+    - [ ] Download piece: Download concurrently blocks from different peers.
+    - [ ] Tests
+- [ ] Commands
+- [ ] UI
