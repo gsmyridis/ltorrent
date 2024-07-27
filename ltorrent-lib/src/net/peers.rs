@@ -169,8 +169,8 @@ impl HandShakeMessage {
     /// * reserved: 8 bytes, which is always 0.
     /// * info hash: 20 bytes, which is the SHA1 hash of the info dictionary in the torrent file.
     /// * peer ID: 20 bytes, which is the peer ID of the client.
-    pub(crate) fn to_bytes(&self) -> [u8; std::mem::size_of::<HandShakeMessage>()] {
-        let mut bytes = [0; std::mem::size_of::<HandShakeMessage>()];
+    pub(crate) fn to_bytes(&self) -> [u8; 68] {
+        let mut bytes = [0; 68];
         bytes[0] = self.length;
         bytes[1..20].copy_from_slice(&self.protocol);
         bytes[20..28].copy_from_slice(&self.reserved);
