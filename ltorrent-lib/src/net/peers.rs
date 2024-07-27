@@ -1,41 +1,49 @@
+use std::marker::Unpin;
 use std::net::SocketAddrV4;
 
 use anyhow::Context;
 use futures_util::{sink::SinkExt, stream::StreamExt};
-use tokio::io::{AsyncReadExt, AsyncWriteExt};
+use tokio::io::{AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt};
 use tokio::net::TcpStream;
 use tokio_util::codec::Framed;
 
 use super::bitfield::BitField;
 use super::message::*;
 
-/// It holds the state of the connection with a specific peer. Specifically, it
-/// stores the socket address of the peer, the framed stream, and the bitfield
-/// of the peer.
-pub struct Peer {
+/// Represents a peer connection in the BitTorrent network.
+///
+/// This struct holds the state of the connection with a specific peer, including:
+/// - The socket address of the peer.
+/// - The framed stream for sending and receiving messages.
+/// - The bitfield representing the pieces that the peer has.
+///
+/// The `Peer` struct implements the `PeerConnection` trait, which allows the user to
+/// interact with the peer connection in a structured manner.
+pub struct Peer<S> {
     address: SocketAddrV4,
-    stream: Framed<TcpStream, MessageFramer>,
+    stream: Framed<S, MessageFramer>,
     bitfield: BitField,
 }
 
-impl Peer {
-    /// Checks if the peer has a specific piece.
+impl<S> Peer<S>
+where
+    S: AsyncRead + AsyncWrite + Unpin,
+{
     fn has_piece(&self, piece_i: usize) -> bool {
         self.bitfield.contains_piece(piece_i)
     }
 
-    /// Sends a message to the peer.
-    pub async fn send(&mut self, message: Message) -> std::io::Result<()> {
+    async fn send(&mut self, message: Message) -> std::io::Result<()> {
         self.stream.send(message).await
     }
 
-    /// Receives a message from the peer.
-    pub async fn next(&mut self) -> Option<std::io::Result<Message>> {
+    async fn next(&mut self) -> Option<std::io::Result<Message>> {
         self.stream.next().await
     }
 }
 
-/// A builder for the `Peer` struct.
+
+/// A builder for the `Peer` struct, with a `TcpStream` as stream.
 pub struct PeerBuilder {
     address: Option<SocketAddrV4>,
     info_hash: Option<[u8; 20]>,
@@ -43,7 +51,7 @@ pub struct PeerBuilder {
 }
 
 impl PeerBuilder {
-    /// Creates a new `PeerConnectionBuilder`, with all fields set to `None`.
+    /// Creates a new `PeerBuilder`, with all fields set to `None`.
     pub fn new() -> Self {
         Self { address: None, info_hash: None, peer_id: None }
     }
@@ -66,7 +74,6 @@ impl PeerBuilder {
         self
     }
 
-
     /// Creates a new peer connection.
     ///
     /// First, it connects to the peer with a TCP stream. Subsequently, it performs
@@ -83,7 +90,7 @@ impl PeerBuilder {
     /// - The handshake message cannot be sent.
     /// - The handshake message cannot be received.
     /// - The received handshake message does not follow the BitTorrent protocol.
-    pub async fn build(&self) -> anyhow::Result<Peer> {
+    pub async fn build(&self) -> anyhow::Result<Peer<TcpStream>> {
         // Check every field is set.
         let address = self.address.context("Address is not set.")?;
         let info_hash = self.info_hash.context("Info hash is not set.")?;
@@ -92,10 +99,10 @@ impl PeerBuilder {
         // Connect to peer with TCP stream.
         let mut stream = TcpStream::connect(address)
             .await
-            .context("Failed to connect to peer.")?;
+            .context("Failed to connect to peer via TCP stream.")?;
 
         // Perform handshake with peer.
-        let handshake = HandShake::new(info_hash, peer_id);
+        let handshake = HandShakeMessage::new(info_hash, peer_id);
         let mut handshake_bytes = [0; 68];
         stream.write_all(&handshake.to_bytes()).await.context("Failed to send handshake.")?;
         stream.read_exact(&mut handshake_bytes).await.context("Failed to receive handshake.")?;
@@ -124,6 +131,7 @@ impl PeerBuilder {
     }
 }
 
+
 /// It represents the handshake message that is exchanged between peers.
 ///
 /// The handshake message requires:
@@ -132,7 +140,7 @@ impl PeerBuilder {
 /// * reserved: 8 bytes, which is always 0.
 /// * info hash: 20 bytes, which is the SHA1 hash of the info dictionary in the torrent file.
 /// * peer ID: 20 bytes, which is the peer ID of the client.
-pub(crate) struct HandShake {
+pub(crate) struct HandShakeMessage {
     length: u8,
     protocol: [u8; 19],
     reserved: [u8; 8],
@@ -140,7 +148,7 @@ pub(crate) struct HandShake {
     peer_id: [u8; 20],
 }
 
-impl HandShake {
+impl HandShakeMessage {
     /// Creates a new HandShake struct from the SHA1 hash of the info dictionary in the
     /// torrent file and the peer ID.
     pub(crate) fn new(info_hash: [u8; 20], peer_id: [u8; 20]) -> Self {
@@ -161,8 +169,8 @@ impl HandShake {
     /// * reserved: 8 bytes, which is always 0.
     /// * info hash: 20 bytes, which is the SHA1 hash of the info dictionary in the torrent file.
     /// * peer ID: 20 bytes, which is the peer ID of the client.
-    pub(crate) fn to_bytes(&self) -> [u8; std::mem::size_of::<HandShake>()] {
-        let mut bytes = [0; std::mem::size_of::<HandShake>()];
+    pub(crate) fn to_bytes(&self) -> [u8; std::mem::size_of::<HandShakeMessage>()] {
+        let mut bytes = [0; std::mem::size_of::<HandShakeMessage>()];
         bytes[0] = self.length;
         bytes[1..20].copy_from_slice(&self.protocol);
         bytes[20..28].copy_from_slice(&self.reserved);
