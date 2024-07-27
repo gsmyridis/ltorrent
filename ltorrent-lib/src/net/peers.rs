@@ -103,7 +103,7 @@ impl PeerBuilder {
 
         // Perform handshake with peer.
         let handshake = HandShakeMessage::new(info_hash, peer_id);
-        let mut handshake_bytes = [0; 68];
+        let mut handshake_bytes = [0; std::mem::size_of::<HandShakeMessage>()];
         stream.write_all(&handshake.to_bytes()).await.context("Failed to send handshake.")?;
         stream.read_exact(&mut handshake_bytes).await.context("Failed to receive handshake.")?;
         anyhow::ensure!(
