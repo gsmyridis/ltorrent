@@ -17,9 +17,9 @@ impl Tracker {
     /// # Errors
     ///
     /// Returns an error if the URL is invalid.
-    pub fn new(url: String) -> anyhow::Result<Self> {
+    pub fn new(url: &str) -> anyhow::Result<Self> {
         let _ = Url::parse(&url).context("Failed to pars URL.")?;
-        Ok(Tracker { url })
+        Ok(Tracker { url: url.to_string() })
     }
 
     /// Sends a query to the tracker and returns the response.
@@ -79,8 +79,8 @@ pub struct TrackerRequest {
 impl TrackerRequest {
     /// Creates a new TrackerRequest.
     pub fn new(
-        info_hash: [u8; 20],
-        peer_id: String,
+        info_hash: &[u8; 20],
+        peer_id: &str,
         port: u16,
         uploaded: usize,
         downloaded: usize,
@@ -88,8 +88,8 @@ impl TrackerRequest {
         compact: u8,
     ) -> Self {
         TrackerRequest {
-            info_hash,
-            peer_id,
+            info_hash: info_hash.to_owned(),
+            peer_id: peer_id.to_string(),
             port,
             uploaded,
             downloaded,
