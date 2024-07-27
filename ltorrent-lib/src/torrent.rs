@@ -51,7 +51,7 @@ impl Torrent {
     /// This method provides access to the `announce` field of the `Torrent` struct,
     /// which contains the URL of the tracker. The tracker coordinates the distribution
     /// of file pieces between peers in the BitTorrent network.
-    pub fn tracker_url(&self) -> &str {
+    pub fn announce(&self) -> &str {
         &self.announce
     }
 
