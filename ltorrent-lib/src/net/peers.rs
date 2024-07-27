@@ -1,4 +1,3 @@
-use std::marker::Unpin;
 use std::net::SocketAddrV4;
 
 use anyhow::Context;
