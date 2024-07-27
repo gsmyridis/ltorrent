@@ -1,3 +1,5 @@
+use std::net::SocketAddrV4;
+
 use anyhow::Context;
 use reqwest::Url;
 use serde::{Deserialize, Serialize};
@@ -32,9 +34,15 @@ impl Tracker {
         let mut url = Url::parse(&self.url).context("Failed to parse URL.")?;
         url.set_query(Some(query.as_str()));
 
-        let response = reqwest::get(url).await.context("Failed to fetch tracker response.")?;
-        let response = response.bytes().await.context("Failed to read tracker response.")?;
-        let response: TrackerResponse = serde_bencode::from_bytes(&response).context("Failed to deserialize tracker response.")?;
+        let response = reqwest::get(url)
+            .await
+            .context("Failed to fetch tracker response.")?;
+        let response = response.bytes()
+            .await
+            .context("Failed to read tracker response.")?;
+        let response: TrackerResponse = serde_bencode::from_bytes(&response)
+            .context("Failed to deserialize tracker response.")?;
+
         Ok(response)
     }
 }
@@ -101,7 +109,7 @@ impl TrackerRequest {
     /// Serializes the request into a URL-encoded string.
     ///
     /// The method is needed because of the difficulty of serializing the info_hash field.
-    pub(crate) fn serialize(&self) -> String {
+    pub fn serialize(self) -> String {
         let hex_str = hex::encode(&self.info_hash);
         let encoded_str = hex_str
             .chars()
@@ -131,6 +139,22 @@ pub struct TrackerResponse {
     peers: PeersAddresses,
 }
 
+impl TrackerResponse {
+    /// Returns the interval between requests.
+    pub fn interval(&self) -> usize {
+        self.interval
+    }
+
+    /// Returns the list of peers' addresses.
+    pub fn peers(&self) -> &PeersAddresses {
+        &self.peers
+    }
+}
+
+/// Holds a list of peers' addresses.
+#[derive(Debug, Clone)]
+pub struct PeersAddresses(pub Vec<SocketAddrV4>);
+
 impl Serialize for PeersAddresses {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
@@ -145,10 +169,6 @@ impl Serialize for PeersAddresses {
     }
 }
 
-#[derive(Debug, Clone)]
-pub struct PeersAddresses(pub Vec<std::net::SocketAddrV4>);
-
-/// Implementation of Deserialization for Peers.
 impl<'de> Deserialize<'de> for PeersAddresses {
     fn deserialize<D>(deserializer: D) -> Result<PeersAddresses, D::Error>
     where
