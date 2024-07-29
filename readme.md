@@ -1,13 +1,15 @@
 # Todos
 
 - [ ] Torrent File
-    - [ ] From Magnet
+    - [x] Parse torrent file
     - [ ] Builder
+    - [ ] From Magnet
     - [ ] Tests
 - [ ] Messages
     - [ ] Checks when creating a message for each message type.
     - [ ] Tests
 - [ ] Tracker
+    - [ ] HTTP Tracker
     - [ ] DHT Tracker
     - [ ] Tests
 - [ ] Peer

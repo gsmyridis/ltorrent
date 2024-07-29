@@ -8,14 +8,6 @@ use super::tracker::{PeersAddresses, Tracker, TrackerRequest};
 
 /// Fetches the list of peer addresses from the tracker for a given torrent file.
 ///
-/// # Arguments
-///
-/// * `path` - The path to the torrent file.
-///
-/// # Returns
-///
-/// A list of peer addresses, `PeerAddresses`.
-///
 /// # Errors
 ///
 /// If the torrent file cannot be read, or the info dictionary cannot be hashed, or the tracker
@@ -58,3 +50,5 @@ pub async fn peers(path: impl AsRef<Path>) -> anyhow::Result<PeersAddresses> {
     let response = tracker.query(request).await?;
     Ok(response.peers().to_owned())
 }
+
+

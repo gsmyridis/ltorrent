@@ -37,7 +37,7 @@ impl Torrent {
     ///
     /// # async fn run() -> anyhow::Result<()> {
     /// let torrent = Torrent::from_file("path/to/torrent/file.torrent").await?;
-    /// println!("Tracker URL: {}", torrent.tracker_url());
+    /// println!("Tracker URL: {}", torrent.announce());
     /// # Ok(())
     /// # }
     /// ```
