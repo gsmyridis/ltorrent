@@ -20,7 +20,7 @@ impl Tracker {
     ///
     /// Returns an error if the URL is invalid.
     pub fn new(url: &str) -> anyhow::Result<Self> {
-        let _ = Url::parse(&url).context("Failed to pars URL.")?;
+        let _ = Url::parse(url).context("Failed to parse URL.")?;
         Ok(Tracker { url: url.to_string() })
     }
 
@@ -110,7 +110,7 @@ impl TrackerRequest {
     ///
     /// The method is needed because of the difficulty of serializing the info_hash field.
     pub fn serialize(self) -> String {
-        let hex_str = hex::encode(&self.info_hash);
+        let hex_str = hex::encode(self.info_hash);
         let encoded_str = hex_str
             .chars()
             .collect::<Vec<_>>()
@@ -199,7 +199,7 @@ impl<'de> serde::de::Visitor<'de> for PeersVisitor {
                 .map(|chunk| {
                     let ip = std::net::Ipv4Addr::new(chunk[0], chunk[1], chunk[2], chunk[3]);
                     let port = u16::from_be_bytes([chunk[4], chunk[5]]);
-                    std::net::SocketAddrV4::new(ip, port)
+                    SocketAddrV4::new(ip, port)
                 })
                 .collect(),
         ))

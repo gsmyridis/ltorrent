@@ -1,7 +1,8 @@
 use std::net::SocketAddrV4;
 
 use anyhow::Context;
-use futures_util::{sink::SinkExt, stream::StreamExt};
+use futures_util::sink::SinkExt;
+use futures_util::stream::StreamExt;
 use tokio::io::{AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt};
 use tokio::net::TcpStream;
 use tokio_util::codec::Framed;
@@ -20,6 +21,7 @@ use super::message::*;
 /// interact with the peer connection in a structured manner.
 pub struct Peer<S> {
     address: SocketAddrV4,
+    peer_id: [u8; 20],
     stream: Framed<S, MessageFramer>,
     bitfield: BitField,
 }
@@ -28,49 +30,35 @@ impl<S> Peer<S>
 where
     S: AsyncRead + AsyncWrite + Unpin,
 {
-    fn has_piece(&self, piece_i: usize) -> bool {
+    pub fn peer_id(&self) -> &[u8; 20] {
+        &self.peer_id
+    }
+
+    pub fn has_piece(&self, piece_i: usize) -> bool {
         self.bitfield.contains_piece(piece_i)
     }
 
-    async fn send(&mut self, message: Message) -> std::io::Result<()> {
+    pub async fn send(&mut self, message: Message) -> std::io::Result<()> {
         self.stream.send(message).await
     }
 
-    async fn next(&mut self) -> Option<std::io::Result<Message>> {
+    pub async fn next(&mut self) -> Option<std::io::Result<Message>> {
         self.stream.next().await
     }
 }
 
 
 /// A builder for the `Peer` struct, with a `TcpStream` as stream.
-pub struct PeerBuilder {
-    address: Option<SocketAddrV4>,
-    info_hash: Option<[u8; 20]>,
-    peer_id: Option<[u8; 20]>,
+pub struct PeerConnectionBuilder {
+    address: SocketAddrV4,
+    info_hash: [u8; 20],
+    peer_id: [u8; 20],
 }
 
-impl PeerBuilder {
-    /// Creates a new `PeerBuilder`, with all fields set to `None`.
-    pub fn new() -> Self {
-        Self { address: None, info_hash: None, peer_id: None }
-    }
-
-    /// Sets the address of the peer.
-    pub fn with_address(&mut self, address: SocketAddrV4) -> &mut Self {
-        self.address = Some(address);
-        self
-    }
-
-    /// Sets the info hash of the torrent.
-    pub fn with_info_hash(&mut self, info_hash: &[u8; 20]) -> &mut Self {
-        self.info_hash = Some(info_hash.to_owned());
-        self
-    }
-
-    /// Sets the peer ID of the client.
-    pub fn with_peer_id(&mut self, peer_id: &[u8; 20]) -> &mut Self {
-        self.peer_id = Some(peer_id.to_owned());
-        self
+impl PeerConnectionBuilder {
+    /// Creates a new `PeerConnectionBuilder`.
+    pub fn new(address: SocketAddrV4, info_hash: [u8; 20], peer_id: [u8; 20]) -> Self {
+        Self { address, info_hash, peer_id }
     }
 
     /// Creates a new peer connection.
@@ -90,26 +78,22 @@ impl PeerBuilder {
     /// - The handshake message cannot be received.
     /// - The received handshake message does not follow the BitTorrent protocol.
     pub async fn build(&self) -> anyhow::Result<Peer<TcpStream>> {
-        // Check every field is set.
-        let address = self.address.context("Address is not set.")?;
-        let info_hash = self.info_hash.context("Info hash is not set.")?;
-        let peer_id = self.peer_id.context("Peer ID is not set.")?;
 
         // Connect to peer with TCP stream.
-        let mut stream = TcpStream::connect(address)
+        let mut stream = TcpStream::connect(self.address)
             .await
             .context("Failed to connect to peer via TCP stream.")?;
 
         // Perform handshake with peer.
-        let handshake = HandShakeMessage::new(info_hash, peer_id);
-        let mut handshake_bytes = [0; std::mem::size_of::<HandShakeMessage>()];
+        let handshake = HandShakeMessage::new(self.info_hash, self.peer_id);
+        let mut handshake_bytes = [0u8; size_of::<HandShakeMessage>()];
         stream.write_all(&handshake.to_bytes()).await.context("Failed to send handshake.")?;
         stream.read_exact(&mut handshake_bytes).await.context("Failed to receive handshake.")?;
         anyhow::ensure!(
             handshake_bytes[1..20] == *b"BitTorrent protocol",
             "Peer did not send BitTorrent protocol."
         );
-
+        let peer_id: [u8; 20] = handshake_bytes[48..].try_into()?;
 
         // Frame stream so that messages can be sent and received in a structured manner.
         let mut framed_stream = Framed::new(stream, MessageFramer);
@@ -122,8 +106,10 @@ impl PeerBuilder {
             "Peer did not send Bitfield message."
         );
 
+
         Ok(Peer {
-            address,
+            address: self.address,
+            peer_id,
             stream: framed_stream,
             bitfield: BitField::from_payload(bitfield.payload()),
         })

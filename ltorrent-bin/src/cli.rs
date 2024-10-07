@@ -1,7 +1,5 @@
 use std::path::PathBuf;
 
-use clap;
-
 #[derive(clap::Parser)]
 #[command(version, about, long_about = None)]
 pub(crate) struct Cli {
@@ -18,4 +16,8 @@ pub(crate) enum Command {
     Peers {
         torrent_path: PathBuf,
     },
-}
+    Handshake {
+        torrent_path: PathBuf,
+        peer_address: String,
+    },
+} 

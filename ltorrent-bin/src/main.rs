@@ -17,11 +17,13 @@ async fn main() -> anyhow::Result<()> {
                 .context("Failed to fetch info")?;
         }
         Command::Peers { torrent_path } => {
-            commands::peers::invoke(torrent_path)
+            commands::peers::search(torrent_path)
                 .await
                 .context("Failed to fetch peers")?;
         }
-        _ => unimplemented!(),
+        Command::Handshake { torrent_path, peer_address } => {
+            commands::peers::handshake(torrent_path, peer_address.as_str()).await?;
+        }
     }
     Ok(())
 }
