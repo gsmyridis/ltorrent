@@ -30,37 +30,6 @@ impl<S> Peer<S>
 where
     S: AsyncRead + AsyncWrite + Unpin,
 {
-    pub fn peer_id(&self) -> &[u8; 20] {
-        &self.peer_id
-    }
-
-    pub fn has_piece(&self, piece_i: usize) -> bool {
-        self.bitfield.contains_piece(piece_i)
-    }
-
-    pub async fn send(&mut self, message: Message) -> std::io::Result<()> {
-        self.stream.send(message).await
-    }
-
-    pub async fn next(&mut self) -> Option<std::io::Result<Message>> {
-        self.stream.next().await
-    }
-}
-
-
-/// A builder for the `Peer` struct, with a `TcpStream` as stream.
-pub struct PeerConnectionBuilder {
-    address: SocketAddrV4,
-    info_hash: [u8; 20],
-    peer_id: [u8; 20],
-}
-
-impl PeerConnectionBuilder {
-    /// Creates a new `PeerConnectionBuilder`.
-    pub fn new(address: SocketAddrV4, info_hash: [u8; 20], peer_id: [u8; 20]) -> Self {
-        Self { address, info_hash, peer_id }
-    }
-
     /// Creates a new peer connection.
     ///
     /// First, it connects to the peer with a TCP stream. Subsequently, it performs
@@ -77,15 +46,15 @@ impl PeerConnectionBuilder {
     /// - The handshake message cannot be sent.
     /// - The handshake message cannot be received.
     /// - The received handshake message does not follow the BitTorrent protocol.
-    pub async fn build(&self) -> anyhow::Result<Peer<TcpStream>> {
+    pub async fn new(address: SocketAddrV4, peer_id: [u8; 20], info_hash: [u8; 20]) -> anyhow::Result<Peer<TcpStream>> {
 
         // Connect to peer with TCP stream.
-        let mut stream = TcpStream::connect(self.address)
+        let mut stream = TcpStream::connect(address)
             .await
             .context("Failed to connect to peer via TCP stream.")?;
 
         // Perform handshake with peer.
-        let handshake = HandShakeMessage::new(self.info_hash, self.peer_id);
+        let handshake = HandShakeMessage::new(info_hash, peer_id);
         let mut handshake_bytes = [0u8; size_of::<HandShakeMessage>()];
         stream.write_all(&handshake.to_bytes()).await.context("Failed to send handshake.")?;
         stream.read_exact(&mut handshake_bytes).await.context("Failed to receive handshake.")?;
@@ -106,13 +75,28 @@ impl PeerConnectionBuilder {
             "Peer did not send Bitfield message."
         );
 
-
         Ok(Peer {
-            address: self.address,
+            address,
             peer_id,
             stream: framed_stream,
             bitfield: BitField::from_payload(bitfield.payload()),
         })
+    }
+
+    pub fn peer_id(&self) -> &[u8; 20] {
+        &self.peer_id
+    }
+
+    pub fn has_piece(&self, piece_i: usize) -> bool {
+        self.bitfield.contains_piece(piece_i)
+    }
+
+    pub async fn send(&mut self, message: Message) -> std::io::Result<()> {
+        self.stream.send(message).await
+    }
+
+    pub async fn next(&mut self) -> Option<std::io::Result<Message>> {
+        self.stream.next().await
     }
 }
 

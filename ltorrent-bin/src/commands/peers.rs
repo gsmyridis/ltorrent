@@ -4,9 +4,10 @@ use std::path::Path;
 use std::str::FromStr;
 
 use anyhow::Context;
+use tokio::net::TcpStream;
 
 use ltorrent::config::Configuration;
-use ltorrent::net::peers::PeerConnectionBuilder;
+use ltorrent::net::peers::Peer;
 use ltorrent::torrent::Torrent;
 use ltorrent::tracker::{Tracker, TrackerRequest};
 
@@ -57,7 +58,7 @@ pub async fn handshake(path: impl AsRef<Path>, address: &str) -> anyhow::Result<
     let config = Configuration::default();
     let peer_id: [u8; 20] = config.peer_id().as_bytes().try_into()?;
 
-    let peer = PeerConnectionBuilder::new(address, info_hash, peer_id).build().await?;
+    let peer = Peer::<TcpStream>::new(address, peer_id, info_hash).await?;
     let peer_id = hex::encode(peer.peer_id());
 
     let stdout = std::io::stdout();
