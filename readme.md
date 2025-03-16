@@ -1,6 +1,6 @@
 # Leech Torrent
 
-## Parse torrent file
+## `Torrent`
 
 Aa torrent file, also known as metainfo file, contains the information about what the torrent contains, and where we
 retrieve the torrent from. Specifically, the metainfo file contains a dictionary with the following keys and values (all
@@ -30,6 +30,23 @@ strings in a .torrent file that contains text must be UTF-8 encoded):
           a zero length list is an error case). The key `name` is the name of the top directory.
 
 To parse a torrent file, simply run:
+
+### `Tracker`
+
+### `TrackerRequest`
+
+### `TrackerResponse`
+
+### `Peer`
+
+### `HandshakeMessage`
+
+## `download`
+
+We sort the `Piece`s with respect to the number of peers that have it, because we want to download first the piece
+that few peers have it and contribute to the network by seeding it. In case two pieces have the same number of peers
+we choose the next piece to download randomly. The reason being, that if we had a deterministic way of choosing the
+piece, then everyone would choose to download the same piece and we would cause congestion to the network needlessly.
 
 ```shell
 ltorrent info <PATH>
